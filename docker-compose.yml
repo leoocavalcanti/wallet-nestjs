@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: financial_wallet_db
+    environment:
+      POSTGRES_DB: financial_wallet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - financial_wallet_network
+
+  app:
+    build: .
+    container_name: financial_wallet_app
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/financial_wallet
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    networks:
+      - financial_wallet_network
+
+volumes:
+  postgres_data:
+
+networks:
+  financial_wallet_network:
+    driver: bridge
