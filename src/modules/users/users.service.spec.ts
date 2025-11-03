@@ -193,15 +193,18 @@ describe('UsersService', () => {
     });
 
     it('should throw BadRequestException for insufficient balance', async () => {
+      const userWithLowBalance = { ...mockUser, balanceInCents: 5000 };
+      
       const mockManager = {
-        findOne: jest.fn().mockResolvedValue(mockUser),
+        findOne: jest.fn().mockResolvedValue(userWithLowBalance),
+        save: jest.fn(),
       };
 
       mockDataSource.transaction.mockImplementation(async (callback) => {
         return callback(mockManager);
       });
 
-      await expect(service.updateBalance(mockUser.id, -15000)).rejects.toThrow(BadRequestException);
+      await expect(service.updateBalance(mockUser.id, -10000)).rejects.toThrow(BadRequestException);
     });
   });
 

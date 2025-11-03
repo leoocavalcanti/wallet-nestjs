@@ -1,10 +1,10 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { Transaction, TransactionStatus } from './transaction.entity';
+import { DataSource, Repository } from 'typeorm';
+import { UsersService } from '../users/users.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ReverseTransactionDto } from './dto/reverse-transaction.dto';
-import { UsersService } from '../users/users.service';
+import { Transaction, TransactionStatus } from './transaction.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -22,8 +22,10 @@ export class TransactionsService {
       throw new BadRequestException('Cannot transfer to yourself');
     }
 
-    await this.usersService.findById(senderId);
-    await this.usersService.findById(receiverId);
+    await Promise.all([
+      this.usersService.findById(senderId),
+      this.usersService.findById(receiverId),
+    ]);
 
     return this.dataSource.transaction(async manager => {
       const senderBalance = await this.usersService.getBalance(senderId);

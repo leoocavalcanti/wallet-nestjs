@@ -3,11 +3,11 @@ import { IsOptional, IsString } from 'class-validator';
 
 export class ReverseTransactionDto {
   @ApiPropertyOptional({
-    description: 'Motivo da reversão da transação',
-    example: 'Solicitação do usuário',
+    description: 'Reason for transaction reversal',
+    example: 'User request',
     required: false
   })
   @IsOptional()
-  @IsString({ message: 'Motivo da reversão deve ser uma string' })
+  @IsString({ message: 'Reversal reason must be a string' })
   reason?: string;
 }
