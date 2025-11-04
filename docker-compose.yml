@@ -13,11 +13,31 @@ services:
     networks:
       - financial_wallet_network
 
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: ${RABBITMQ_CONTAINER_NAME:-financial_wallet_rabbitmq}
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin123}
+    ports:
+      - "5672:5672"     # AMQP port
+      - "15672:15672"   # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - financial_wallet_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   app:
     build: .
     container_name: ${APP_CONTAINER_NAME:-financial_wallet_app}
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin123}@rabbitmq:5672
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${PORT:-3000}
@@ -30,6 +50,7 @@ services:
 
 volumes:
   postgres_data:
+  rabbitmq_data:
 
 networks:
   financial_wallet_network:

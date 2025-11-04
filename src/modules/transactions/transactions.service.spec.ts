@@ -1,18 +1,17 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { UsersService } from '../users/users.service';
+import { Repository } from 'typeorm';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ReverseTransactionDto } from './dto/reverse-transaction.dto';
+import { TransactionDomainService } from './services/transaction-domain.service';
 import { Transaction, TransactionStatus } from './transaction.entity';
 import { TransactionsService } from './transactions.service';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
   let repository: Repository<Transaction>;
-  let usersService: UsersService;
-  let dataSource: DataSource;
+  let domainService: TransactionDomainService;
 
   const mockTransaction: Transaction = {
     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -33,16 +32,12 @@ describe('TransactionsService', () => {
     find: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
-  const mockUsersService = {
-    findById: jest.fn(),
-    getBalance: jest.fn(),
-    updateBalance: jest.fn(),
-  };
-
-  const mockDataSource = {
-    transaction: jest.fn(),
+  const mockDomainService = {
+    createTransfer: jest.fn(),
+    reverseTransaction: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -54,20 +49,15 @@ describe('TransactionsService', () => {
           useValue: mockRepository,
         },
         {
-          provide: UsersService,
-          useValue: mockUsersService,
-        },
-        {
-          provide: DataSource,
-          useValue: mockDataSource,
+          provide: TransactionDomainService,
+          useValue: mockDomainService,
         },
       ],
     }).compile();
 
     service = module.get<TransactionsService>(TransactionsService);
     repository = module.get<Repository<Transaction>>(getRepositoryToken(Transaction));
-    usersService = module.get<UsersService>(UsersService);
-    dataSource = module.get<DataSource>(DataSource);
+    domainService = module.get<TransactionDomainService>(TransactionDomainService);
 
     jest.clearAllMocks();
   });
@@ -86,89 +76,109 @@ describe('TransactionsService', () => {
     it('should create a transaction successfully', async () => {
       const senderId = '123e4567-e89b-12d3-a456-426614174000';
       
-      mockUsersService.findById.mockResolvedValue({});
-      mockUsersService.getBalance.mockResolvedValue(10000);
-      mockUsersService.updateBalance.mockResolvedValue(undefined);
-
-      const mockManager = {
-        create: jest.fn().mockReturnValue(mockTransaction),
-        save: jest.fn().mockResolvedValue(mockTransaction),
-      };
-
-      mockDataSource.transaction.mockImplementation(async (callback) => {
-        return callback(mockManager);
-      });
+      mockDomainService.createTransfer.mockResolvedValue(mockTransaction);
 
       const result = await service.create(senderId, createTransactionDto);
 
-      expect(mockUsersService.findById).toHaveBeenCalledWith(senderId);
-      expect(mockUsersService.findById).toHaveBeenCalledWith(createTransactionDto.receiverId);
-      expect(mockUsersService.getBalance).toHaveBeenCalledWith(senderId);
-      expect(mockUsersService.updateBalance).toHaveBeenCalledWith(senderId, -5000);
-      expect(mockUsersService.updateBalance).toHaveBeenCalledWith(createTransactionDto.receiverId, 5000);
+      expect(mockDomainService.createTransfer).toHaveBeenCalledWith(senderId, createTransactionDto);
       expect(result).toEqual(mockTransaction);
     });
 
-    it('should throw BadRequestException for self-transfer', async () => {
+    it('should delegate errors to domain service', async () => {
       const senderId = '123e4567-e89b-12d3-a456-426614174000';
-      const selfTransferDto = { ...createTransactionDto, receiverId: senderId };
-
-      await expect(service.create(senderId, selfTransferDto)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for insufficient balance', async () => {
-      const senderId = '123e4567-e89b-12d3-a456-426614174000';
+      const error = new BadRequestException('Domain service error');
       
-      mockUsersService.findById.mockResolvedValue({});
-      mockUsersService.getBalance.mockResolvedValue(1000); // Less than required amount
+      mockDomainService.createTransfer.mockRejectedValue(error);
 
-      const mockManager = {};
-      mockDataSource.transaction.mockImplementation(async (callback) => {
-        return callback(mockManager);
-      });
-
-      await expect(service.create(senderId, createTransactionDto)).rejects.toThrow(BadRequestException);
+      await expect(service.create(senderId, createTransactionDto)).rejects.toThrow(error);
     });
   });
 
   describe('findById', () => {
     it('should return transaction if found', async () => {
-      mockRepository.findOne.mockResolvedValue(mockTransaction);
+      const mockQueryBuilder = {
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue({
+          id: mockTransaction.id,
+          senderId: mockTransaction.senderId,
+          receiverId: mockTransaction.receiverId,
+          amountInCents: mockTransaction.amountInCents,
+          description: mockTransaction.description,
+          status: mockTransaction.status,
+          reversalReason: mockTransaction.reversalReason,
+          createdAt: mockTransaction.createdAt,
+          updatedAt: mockTransaction.updatedAt,
+          sender_id: mockTransaction.senderId,
+          sender_email: 'sender@test.com',
+          sender_name: 'Sender Name',
+          receiver_id: mockTransaction.receiverId,
+          receiver_email: 'receiver@test.com',
+          receiver_name: 'Receiver Name',
+        }),
+      };
+
+      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await service.findById(mockTransaction.id);
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: mockTransaction.id },
-        relations: ['sender', 'receiver'],
-      });
-      expect(result).toEqual(mockTransaction);
+      expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('transaction');
+      expect(result).toHaveProperty('id', mockTransaction.id);
+      expect(result).toHaveProperty('sender');
+      expect(result).toHaveProperty('receiver');
     });
 
-    it('should throw NotFoundException if transaction not found', async () => {
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should throw error if transaction not found', async () => {
+      const mockQueryBuilder = {
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getRawOne: jest.fn().mockResolvedValue(null),
+      };
 
-      await expect(service.findById('nonexistent-id')).rejects.toThrow(NotFoundException);
+      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      await expect(service.findById('nonexistent-id')).rejects.toThrow('Transaction not found');
     });
   });
 
   describe('findByUserId', () => {
     it('should return user transactions', async () => {
       const userId = '123e4567-e89b-12d3-a456-426614174000';
-      const transactions = [mockTransaction];
+      const mockQueryBuilder = {
+        leftJoin: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn().mockResolvedValue([{
+          id: mockTransaction.id,
+          senderId: mockTransaction.senderId,
+          receiverId: mockTransaction.receiverId,
+          amountInCents: mockTransaction.amountInCents,
+          description: mockTransaction.description,
+          status: mockTransaction.status,
+          reversalReason: mockTransaction.reversalReason,
+          createdAt: mockTransaction.createdAt,
+          updatedAt: mockTransaction.updatedAt,
+          sender_id: mockTransaction.senderId,
+          sender_email: 'sender@test.com',
+          sender_name: 'Sender Name',
+          receiver_id: mockTransaction.receiverId,
+          receiver_email: 'receiver@test.com',
+          receiver_name: 'Receiver Name',
+        }]),
+      };
 
-      mockRepository.find.mockResolvedValue(transactions);
+      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       const result = await service.findByUserId(userId);
 
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        where: [
-          { senderId: userId },
-          { receiverId: userId }
-        ],
-        relations: ['sender', 'receiver'],
-        order: { createdAt: 'DESC' },
-      });
-      expect(result).toEqual(transactions);
+      expect(mockRepository.createQueryBuilder).toHaveBeenCalledWith('transaction');
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty('id', mockTransaction.id);
+      expect(result[0]).toHaveProperty('sender');
+      expect(result[0]).toHaveProperty('receiver');
     });
   });
 
@@ -179,41 +189,23 @@ describe('TransactionsService', () => {
 
     it('should reverse transaction successfully', async () => {
       const userId = mockTransaction.senderId;
-      
-      jest.spyOn(service, 'findById').mockResolvedValue(mockTransaction);
-      mockUsersService.updateBalance.mockResolvedValue(undefined);
-
       const reversedTransaction = { ...mockTransaction, status: TransactionStatus.REVERSED };
-      const mockManager = {
-        save: jest.fn().mockResolvedValue(reversedTransaction),
-      };
-
-      mockDataSource.transaction.mockImplementation(async (callback) => {
-        return callback(mockManager);
-      });
+      
+      mockDomainService.reverseTransaction.mockResolvedValue(reversedTransaction);
 
       const result = await service.reverse(mockTransaction.id, userId, reverseDto);
 
-      expect(service.findById).toHaveBeenCalledWith(mockTransaction.id);
-      expect(mockUsersService.updateBalance).toHaveBeenCalledWith(mockTransaction.senderId, mockTransaction.amountInCents);
-      expect(mockUsersService.updateBalance).toHaveBeenCalledWith(mockTransaction.receiverId, -mockTransaction.amountInCents);
-      expect(result.status).toBe(TransactionStatus.REVERSED);
+      expect(mockDomainService.reverseTransaction).toHaveBeenCalledWith(mockTransaction.id, userId, reverseDto);
+      expect(result).toEqual(reversedTransaction);
     });
 
-    it('should throw BadRequestException if user is not part of the transaction', async () => {
-      const unauthorizedUserId = 'unauthorized-user-id';
+    it('should delegate errors to domain service', async () => {
+      const userId = mockTransaction.senderId;
+      const error = new BadRequestException('Domain service error');
       
-      jest.spyOn(service, 'findById').mockResolvedValue(mockTransaction);
+      mockDomainService.reverseTransaction.mockRejectedValue(error);
 
-      await expect(service.reverse(mockTransaction.id, unauthorizedUserId, reverseDto)).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException if transaction is not completed', async () => {
-      const pendingTransaction = { ...mockTransaction, status: TransactionStatus.PENDING };
-      
-      jest.spyOn(service, 'findById').mockResolvedValue(pendingTransaction);
-
-      await expect(service.reverse(mockTransaction.id, mockTransaction.senderId, reverseDto)).rejects.toThrow(BadRequestException);
+      await expect(service.reverse(mockTransaction.id, userId, reverseDto)).rejects.toThrow(error);
     });
   });
 });

@@ -1,80 +1,21 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { User } from '../users/user.entity';
+import { Repository } from 'typeorm';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ReverseTransactionDto } from './dto/reverse-transaction.dto';
-import { Transaction, TransactionStatus } from './transaction.entity';
+import { Transaction } from './transaction.entity';
+import { TransactionDomainService } from './services/transaction-domain.service';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @InjectRepository(Transaction)
     private transactionsRepository: Repository<Transaction>,
-    private dataSource: DataSource,
+    private transactionDomainService: TransactionDomainService,
   ) {}
 
-
   async create(senderId: string, createTransactionDto: CreateTransactionDto): Promise<Transaction> {
-    const { receiverId, amountInCents, description } = createTransactionDto;
-
-    if (senderId === receiverId) {
-      throw new BadRequestException('Cannot transfer to yourself');
-    }
-
-    return this.dataSource.transaction(async manager => {
-      // Validate that both users exist before starting the transaction
-      const usersExist = await manager.count(User, {
-        where: [{ id: senderId }, { id: receiverId }]
-      });
-      
-      if (usersExist !== 2) {
-        throw new BadRequestException('One or both users not found');
-      }
-      // Get both users with pessimistic lock within the same transaction
-      // Order by ID to prevent deadlocks when multiple transactions access same users
-      const userIds = [senderId, receiverId].sort();
-      const users = await manager.find(User, { 
-        where: userIds.map(id => ({ id })),
-        order: { id: 'ASC' },
-        lock: { mode: 'pessimistic_write' }
-      });
-
-      if (users.length !== 2) {
-        throw new BadRequestException('User not found');
-      }
-
-      const sender = users.find(u => u.id === senderId);
-      const receiver = users.find(u => u.id === receiverId);
-
-      if (!sender || !receiver) {
-        throw new BadRequestException('User not found');
-      }
-      
-      if (sender.balanceInCents < amountInCents) {
-        throw new BadRequestException('Insufficient balance');
-      }
-
-      const transaction = manager.create(Transaction, {
-        senderId,
-        receiverId,
-        amountInCents,
-        description,
-        status: TransactionStatus.PENDING,
-      });
-
-      const savedTransaction = await manager.save(transaction);
-
-      // Update balances within the same transaction
-      sender.balanceInCents -= amountInCents;
-      receiver.balanceInCents += amountInCents;
-
-      await manager.save(sender);
-      await manager.save(receiver);
-
-      savedTransaction.status = TransactionStatus.COMPLETED;
-      return manager.save(savedTransaction);
-    });
+    return this.transactionDomainService.createTransfer(senderId, createTransactionDto);
   }
 
   async findById(id: string): Promise<any> {
@@ -103,7 +44,7 @@ export class TransactionsService {
       .getRawOne();
 
     if (!result) {
-      throw new NotFoundException('Transaction not found');
+      throw new Error('Transaction not found');
     }
 
     return {
@@ -178,58 +119,7 @@ export class TransactionsService {
     }));
   }
 
-  private async findTransactionForReverse(transactionId: string): Promise<Transaction> {
-    const transaction = await this.transactionsRepository.findOne({
-      where: { id: transactionId }
-    });
-
-    if (!transaction) {
-      throw new NotFoundException('Transaction not found');
-    }
-
-    return transaction;
-  }
-
   async reverse(transactionId: string, userId: string, reverseDto: ReverseTransactionDto): Promise<Transaction> {
-    const transaction = await this.findTransactionForReverse(transactionId);
-
-    if (transaction.senderId !== userId && transaction.receiverId !== userId) {
-      throw new BadRequestException('You can only reverse your own transactions');
-    }
-
-    if (transaction.status !== TransactionStatus.COMPLETED) {
-      throw new BadRequestException('Only completed transactions can be reversed');
-    }
-
-    return this.dataSource.transaction(async manager => {
-      const userIds = [transaction.senderId, transaction.receiverId].sort();
-      const users = await manager.find(User, { 
-        where: userIds.map(id => ({ id })),
-        order: { id: 'ASC' },
-        lock: { mode: 'pessimistic_write' }
-      });
-
-      if (users.length !== 2) {
-        throw new BadRequestException('User not found');
-      }
-
-      const sender = users.find(u => u.id === transaction.senderId);
-      const receiver = users.find(u => u.id === transaction.receiverId);
-
-      if (!sender || !receiver) {
-        throw new BadRequestException('User not found');
-      }
-
-      sender.balanceInCents += transaction.amountInCents;
-      receiver.balanceInCents -= transaction.amountInCents;
-
-      await manager.save(sender);
-      await manager.save(receiver);
-
-      transaction.status = TransactionStatus.REVERSED;
-      transaction.reversalReason = reverseDto.reason || 'Requested by user';
-
-      return manager.save(transaction);
-    });
+    return this.transactionDomainService.reverseTransaction(transactionId, userId, reverseDto);
   }
 }

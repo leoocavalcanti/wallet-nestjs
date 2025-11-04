@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule, UsersModule, TransactionsModule } from './modules';
+import { QueueModule } from './modules/queue/queue.module';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 
@@ -21,6 +22,7 @@ import * as winston from 'winston';
       ],
     }),
     DatabaseModule,
+    QueueModule,
     AuthModule,
     UsersModule,
     TransactionsModule,
