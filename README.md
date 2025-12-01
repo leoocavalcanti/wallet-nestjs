@@ -1,34 +1,34 @@
-# 🏦 Sistema de Carteira Financeira
+# 🏦 Financial Wallet System
 
-Sistema monolítico de carteira financeira construído com **NestJS**, **TypeScript**, **PostgreSQL** e **JWT** para transferências seguras entre usuários.
+Monolithic financial wallet system built with **NestJS**, **TypeScript**, **PostgreSQL**, and **JWT** for secure transfers between users.
 
-## 📋 Índice
+## 📋 Table of Contents
 
-- [🎯 Objetivo](#-objetivo)
-- [🏗️ Arquitetura](#️-arquitetura)
-- [✅ Requisitos Atendidos](#-requisitos-atendidos)
-- [🚀 Instalação e Configuração](#-instalação-e-configuração)
-- [▶️ Como Iniciar](#️-como-iniciar)
+- [🎯 Objective](#-objective)
+- [🏗️ Architecture](#️-architecture)
+- [✅ Requirements Met](#-requirements-met)
+- [🚀 Installation and Configuration](#-installation-and-configuration)
+- [▶️ How to Start](#️-how-to-start)
 - [📡 API Endpoints](#-api-endpoints)
-- [🧪 Testes](#-testes)
-- [🔒 Segurança](#-segurança)
-- [📊 Arquitetura de Dados](#-arquitetura-de-dados)
+- [🧪 Tests](#-tests)
+- [🔒 Security](#-security)
+- [📊 Data Architecture](#-data-architecture)
 
-## 🎯 Objetivo
+## 🎯 Objective
 
-Sistema de carteira financeira que permite aos usuários:
+Financial wallet system that allows users to:
 
-- **Cadastro e autenticação** segura de usuários
-- **Transferências de saldo** entre usuários com validação
-- **Transações reversíveis** para qualquer inconsistência
-- **Saldo em centavos** para preservar precisão decimal
-- **Logs e monitoramento** completo das operações
+- **Securely register and authenticate** users
+- **Transfer balances** between users with validation
+- **Reversible transactions** for any inconsistencies
+- **Balance in cents** to preserve decimal precision
+- **Complete logs and monitoring** of operations
 
-## 🏗️ Arquitetura
+## 🏗️ Architecture
 
-### Arquitetura Clean Code com Design Patterns
+### Clean Code Architecture with Design Patterns
 
-O sistema implementa **Clean Code**, **princípios SOLID** e **Design Patterns** para máxima qualidade e manutenibilidade.
+The system implements **Clean Code**, **SOLID principles**, and **Design Patterns** for maximum quality and maintainability.
 
 ```mermaid
 graph TD
@@ -64,20 +64,20 @@ graph TD
     class S,SF,ST,T pattern
 ```
 
-### Arquitetura Clean Code
+### Clean Code Architecture
 
-#### 📂 Estrutura de Pastas
+#### 📂 Folder Structure
 ```
 src/
 ├── common/
-│   ├── interfaces/           # Interfaces para SOLID
+│   ├── interfaces/           # Interfaces for SOLID
 │   │   ├── repository.interface.ts
 │   │   └── queue.interface.ts
 │   └── value-objects/        # Value Objects (DDD)
 │       └── money.vo.ts
 ├── modules/
-│   ├── auth/                 # Autenticação
-│   ├── users/                # Gerenciamento de usuários
+│   ├── auth/                 # Authentication
+│   ├── users/                # User management
 │   ├── transactions/
 │   │   ├── services/         # Domain Services
 │   │   │   └── transaction-domain.service.ts
@@ -86,110 +86,110 @@ src/
 │   │   │   └── transfer-strategy.ts
 │   │   ├── factories/        # Factory Pattern
 │   │   │   └── transaction-strategy.factory.ts
-│   │   └── dto/             # Data Transfer Objects
-│   └── queue/               # RabbitMQ Integration
+│   │   └── dto/              # Data Transfer Objects
+│   └── queue/                # RabbitMQ Integration
 │       └── rabbitmq.service.ts
 ```
 
-### 🎯 Design Patterns Implementados
+### 🎯 Implemented Design Patterns
 
-| Pattern | Implementação | Benefício |
+| Pattern | Implementation | Benefit |
 |---------|---------------|-----------|
-| **Strategy Pattern** | `TransferStrategy` para tipos de transação | Extensibilidade para novos tipos |
-| **Factory Pattern** | `TransactionStrategyFactory` | Criação centralizada de strategies |
-| **Domain Service** | `TransactionDomainService` | Lógica de negócio isolada |
-| **Value Objects** | `Money` class | Encapsulamento de valores monetários |
-| **Repository Pattern** | Interfaces genéricas | Abstração de acesso a dados |
+| **Strategy Pattern** | `TransferStrategy` for transaction types | Extensibility for new types |
+| **Factory Pattern** | `TransactionStrategyFactory` | Centralized strategy creation |
+| **Domain Service** | `TransactionDomainService` | Isolated business logic |
+| **Value Objects** | `Money` class | Monetary value encapsulation |
+| **Repository Pattern** | Generic interfaces | Data access abstraction |
 
-### 🔧 Princípios SOLID
+### 🔧 SOLID Principles
 
-- ✅ **Single Responsibility**: Cada classe tem uma responsabilidade única
-- ✅ **Open/Closed**: Strategy Pattern permite extensão sem modificação
-- ✅ **Liskov Substitution**: Interfaces permitem substituição de implementações
-- ✅ **Interface Segregation**: Interfaces específicas (IQueueService, ITransactionEventPublisher)
-- ✅ **Dependency Inversion**: Injeção de dependências e abstrações
+- ✅ **Single Responsibility**: Each class has a single responsibility
+- ✅ **Open/Closed**: Strategy Pattern allows extension without modification
+- ✅ **Liskov Substitution**: Interfaces allow implementation substitution
+- ✅ **Interface Segregation**: Specific interfaces (IQueueService, ITransactionEventPublisher)
+- ✅ **Dependency Inversion**: Dependency injection and abstractions
 
 ### 🐰 RabbitMQ Integration
 
-Sistema de eventos assíncronos para monitoramento de transações:
+Asynchronous event system for transaction monitoring:
 
 ```typescript
-// Eventos publicados automaticamente:
-transaction.created     // Quando transação é criada
-transaction.completed   // Quando transação é concluída
-transaction.reversed    // Quando transação é revertida
-transaction.failed      // Quando transação falha
+// Automatically published events:
+transaction.created     // When transaction is created
+transaction.completed   // When transaction is completed
+transaction.reversed    // When transaction is reversed
+transaction.failed      // When transaction fails
 ```
 
-### Componentes
+### Components
 
-| Componente | Descrição |
-|------------|-----------|
-| **NestJS Application** | Aplicação principal na porta 3000 |
-| **Auth Module** | Autenticação JWT com strategies |
-| **Users Module** | Gerenciamento de usuários e saldo |
-| **Transactions Module** | Processamento com Clean Architecture |
-| **Transaction Domain Service** | Lógica de negócio complexa |
-| **Strategy Factory** | Criação de estratégias de transação |
-| **RabbitMQ Service** | Eventos assíncronos e logging |
-| **PostgreSQL** | Banco de dados principal |
-| **Winston Logger** | Sistema de logs estruturados |
-| **Swagger** | Documentação automática da API |
+| Component | Description |
+|-----------|-------------|
+| **NestJS Application** | Main application on port 3000 |
+| **Auth Module** | JWT authentication with strategies |
+| **Users Module** | User and balance management |
+| **Transactions Module** | Processing with Clean Architecture |
+| **Transaction Domain Service** | Complex business logic |
+| **Strategy Factory** | Transaction strategy creation |
+| **RabbitMQ Service** | Asynchronous events and logging |
+| **PostgreSQL** | Main database |
+| **Winston Logger** | Structured logging system |
+| **Swagger** | Automatic API documentation |
 
-## ✅ Requisitos Atendidos
+## ✅ Requirements Met
 
-### Requisitos Obrigatórios ✅
+### Mandatory Requirements ✅
 
-- ✅ **Cadastro de usuários** - Endpoint `/auth/register`
-- ✅ **Autenticação JWT** - Endpoint `/auth/login` 
-- ✅ **Transferências** - Endpoint `POST /transactions`
-- ✅ **Validação de saldo** - Verificação antes de cada transferência
-- ✅ **Transações reversíveis** - Endpoint `PATCH /transactions/:id/reverse`
+- ✅ **User registration** - Endpoint `/auth/register`
+- ✅ **JWT Authentication** - Endpoint `/auth/login`
+- ✅ **Transfers** - Endpoint `POST /transactions`
+- ✅ **Balance validation** - Verification before each transfer
+- ✅ **Reversible transactions** - Endpoint `PATCH /transactions/:id/reverse`
 
-### Tecnologias Obrigatórias ✅
+### Mandatory Technologies ✅
 
-- ✅ **Node.js** - Runtime JavaScript
-- ✅ **NestJS** - Framework para aplicações scaláveis
-- ✅ **TypeScript** - Linguagem de programação
+- ✅ **Node.js** - JavaScript runtime
+- ✅ **NestJS** - Framework for scalable applications
+- ✅ **TypeScript** - Programming language
 
-### Diferenciais Implementados ✅
+### Implemented Differentiators ✅
 
-- ✅ **Docker** - Containerização completa
-- ✅ **Testes unitários** - 27 testes passando
-- ✅ **Testes de integração** - Testes E2E completos
-- ✅ **Documentação** - Swagger + README detalhado
-- ✅ **Logging** - Winston para logs estruturados
-- ✅ **Clean Code** - Arquitetura limpa e SOLID
+- ✅ **Docker** - Complete containerization
+- ✅ **Unit tests** - 27 passing tests
+- ✅ **Integration tests** - Complete E2E tests
+- ✅ **Documentation** - Swagger + detailed README
+- ✅ **Logging** - Winston for structured logs
+- ✅ **Clean Code** - Clean and SOLID architecture
 - ✅ **Design Patterns** - Strategy, Factory, Domain Service
-- ✅ **RabbitMQ** - Sistema de eventos assíncronos
-- ✅ **Value Objects** - Money class para precisão
-- ✅ **Security** - Sanitização de dados sensíveis
+- ✅ **RabbitMQ** - Asynchronous event system
+- ✅ **Value Objects** - Money class for precision
+- ✅ **Security** - Sensitive data sanitization
 
-## 🚀 Instalação e Configuração
+## 🚀 Installation and Configuration
 
-### Pré-requisitos
+### Prerequisites
 
-- **Node.js** 18+ e **npm**
-- **Docker** e **Docker Compose**
+- **Node.js** 18+ and **npm**
+- **Docker** and **Docker Compose**
 - **Git**
-- **Postman** ou **curl** (para testes de API)
+- **Postman** or **curl** (for API testing)
 
-### 1. Clone o Repositório
+### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd microsservices-bank
 ```
 
-### 2. Instale as Dependências
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configure o Ambiente
+### 3. Configure Environment
 
-O arquivo `.env` já está configurado com valores padrão:
+The `.env` file is already configured with default values:
 
 ```env
 PORT=3000
@@ -198,80 +198,80 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 NODE_ENV=development
 ```
 
-⚠️ **IMPORTANTE**: Em produção, altere o `JWT_SECRET` para uma chave segura!
+⚠️ **IMPORTANT**: In production, change the `JWT_SECRET` to a secure key!
 
-## ▶️ Como Iniciar
+## ▶️ How to Start
 
-### 1. Inicie o Banco de Dados
+### 1. Start the Database
 
 ```bash
-# Apenas o PostgreSQL
+# PostgreSQL only
 docker-compose up postgres -d
 ```
 
-### 2. Execute a Aplicação
+### 2. Run the Application
 
 ```bash
-# Desenvolvimento
+# Development
 npm run start:dev
 
-# Produção (build primeiro)
+# Production (build first)
 npm run build
 npm run start:prod
 ```
 
-### 3. Verifique os Logs
+### 3. Check the Logs
 
-Você deve ver logs similares a:
+You should see logs similar to:
 
 ```
 🚀 Financial Wallet API is running on port 3000
 📖 API Documentation available at http://localhost:3000/api
 ```
 
-### 4. Acesse a Documentação
+### 4. Access Documentation
 
-- **API Swagger**: http://localhost:3000/api
-- **Aplicação**: http://localhost:3000
+- **Swagger API**: http://localhost:3000/api
+- **Application**: http://localhost:3000
 
-## 🐳 Executar com Docker
+## 🐳 Run with Docker
 
-### Subir todo ambiente
+### Start entire environment
 
 ```bash
 docker-compose up -d
 ```
 
-Isso iniciará:
-- PostgreSQL na porta 5432
-- Aplicação na porta 3000
+This will start:
+- PostgreSQL on port 5432
+- Application on port 3000
 
 ## 📡 API Endpoints
 
 Base URL: `http://localhost:3000`
 
-### 🔐 Autenticação
+### 🔐 Authentication
 
-#### Registrar Usuário
+#### Register User
 ```http
 POST /auth/register
 Content-Type: application/json
 
 {
-  "email": "usuario@email.com",
-  "password": "senha123",
-  "name": "Nome do Usuário",
+  "email": "user@email.com",
+  "password": "password123",
+  "name": "User Name",
   "balanceInCents": 100000
 }
 ```
 
-**Resposta (201):**
+**Response (201):**
 ```json
 {
   "user": {
     "id": "123e4567-e89b-12d3-a456-426614174000",
-    "email": "usuario@email.com",
-    "name": "Nome do Usuário",
+    "email": "user@email.com",
+    "name": "User Name",
     "balanceInCents": 100000,
     "createdAt": "2024-01-15T10:30:00.000Z",
     "updatedAt": "2024-01-15T10:30:00.000Z"
@@ -286,26 +286,26 @@ POST /auth/login
 Content-Type: application/json
 
 {
-  "email": "usuario@email.com",
-  "password": "senha123"
+  "email": "user@email.com",
+  "password": "password123"
 }
 ```
 
-### 👤 Usuários (Autenticado)
+### 👤 Users (Authenticated)
 
-#### Perfil do Usuário
+#### User Profile
 ```http
 GET /users/profile
 Authorization: Bearer <token>
 ```
 
-#### Saldo do Usuário
+#### User Balance
 ```http
 GET /users/balance
 Authorization: Bearer <token>
 ```
 
-**Resposta:**
+**Response:**
 ```json
 {
   "balanceInCents": 100000,
@@ -313,124 +313,124 @@ Authorization: Bearer <token>
 }
 ```
 
-### 💸 Transações (Autenticado)
+### 💸 Transactions (Authenticated)
 
-#### Criar Transferência
+#### Create Transfer
 ```http
 POST /transactions
 Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "receiverId": "uuid-do-destinatario",
+  "receiverId": "receiver-uuid",
   "amountInCents": 5000,
-  "description": "Transferência PIX"
+  "description": "PIX Transfer"
 }
 ```
 
-**Resposta (201):**
+**Response (201):**
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "senderId": "123e4567-e89b-12d3-a456-426614174000",
   "receiverId": "123e4567-e89b-12d3-a456-426614174001",
   "amountInCents": 5000,
-  "description": "Transferência PIX",
+  "description": "PIX Transfer",
   "status": "completed",
   "createdAt": "2024-01-15T10:30:00.000Z",
   "updatedAt": "2024-01-15T10:30:00.000Z"
 }
 ```
 
-#### Listar Transações do Usuário
+#### List User Transactions
 ```http
 GET /transactions
 Authorization: Bearer <token>
 ```
 
-#### Buscar Transação por ID
+#### Get Transaction by ID
 ```http
 GET /transactions/{id}
 Authorization: Bearer <token>
 ```
 
-#### Reverter Transação
+#### Reverse Transaction
 ```http
 PATCH /transactions/{id}/reverse
 Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "reason": "Motivo da reversão"
+  "reason": "Reversal reason"
 }
 ```
 
-## 🧪 Testes
+## 🧪 Tests
 
-O projeto inclui cobertura completa de testes unitários e de integração.
+The project includes complete unit and integration test coverage.
 
-### Executar Testes
+### Run Tests
 
 ```bash
-# Todos os testes
+# All tests
 npm test
 
-# Apenas testes unitários
+# Unit tests only
 npm run test:unit
 
-# Testes de integração (E2E)
+# Integration tests (E2E)
 npm run test:e2e
 
-# Testes com coverage
+# Tests with coverage
 npm run test:cov
 
-# Modo watch (desenvolvimento)
+# Watch mode (development)
 npm run test:watch
 ```
 
-### Cobertura dos Testes
+### Test Coverage
 
-#### Testes Unitários
-- ✅ **AuthService** - Registro, login, validação JWT
-- ✅ **UsersService** - CRUD usuários, validação saldo
-- ✅ **TransactionsService** - Transferências, reversões
+#### Unit Tests
+- ✅ **AuthService** - Registration, login, JWT validation
+- ✅ **UsersService** - User CRUD, balance validation
+- ✅ **TransactionsService** - Transfers, reversals
 
-#### Testes de Integração (E2E)
-- ✅ **Autenticação** - Registro e login completo
-- ✅ **Usuários** - Perfil e consulta de saldo
-- ✅ **Transações** - Criação, listagem, busca, reversão
-- ✅ **Segurança** - Validação de tokens JWT
-- ✅ **Validações** - Dados de entrada e regras de negócio
+#### Integration Tests (E2E)
+- ✅ **Authentication** - Complete registration and login
+- ✅ **Users** - Profile and balance queries
+- ✅ **Transactions** - Creation, listing, search, reversal
+- ✅ **Security** - JWT token validation
+- ✅ **Validations** - Input data and business rules
 
-## 🔒 Segurança
+## 🔒 Security
 
-### Implementações de Segurança
+### Security Implementations
 
-- ✅ **JWT Authentication** - Tokens seguros com expiração
-- ✅ **Password Hashing** - bcryptjs com salt rounds
-- ✅ **Input Validation** - class-validator em todos os DTOs
-- ✅ **SQL Injection Protection** - TypeORM com prepared statements
-- ✅ **CORS** - Configurado para origens permitidas
-- ✅ **Rate Limiting** - Via reverse proxy (recomendado)
+- ✅ **JWT Authentication** - Secure tokens with expiration
+- ✅ **Password Hashing** - bcryptjs with salt rounds
+- ✅ **Input Validation** - class-validator in all DTOs
+- ✅ **SQL Injection Protection** - TypeORM with prepared statements
+- ✅ **CORS** - Configured for allowed origins
+- ✅ **Rate Limiting** - Via reverse proxy (recommended)
 
-### Melhores Práticas
+### Best Practices
 
-- Senhas hasheadas com bcrypt (salt rounds: 10)
-- Tokens JWT com expiração de 24h
-- Validação rigorosa de entrada
-- Transações atômicas para operações financeiras
-- Logs estruturados sem informações sensíveis
+- Passwords hashed with bcrypt (salt rounds: 10)
+- JWT tokens with 24h expiration
+- Strict input validation
+- Atomic transactions for financial operations
+- Structured logs without sensitive information
 
-## 🧹 Clean Code & Arquitetura
+## 🧹 Clean Code & Architecture
 
-### Princípios Aplicados
+### Applied Principles
 
 #### 🎯 Clean Code
-- **Nomes descritivos**: Classes e métodos com nomes claros
-- **Funções pequenas**: Uma responsabilidade por função
-- **Comentários desnecessários removidos**: Código autoexplicativo
-- **Tratamento de erros**: Exceptions específicas para cada caso
-- **Testes abrangentes**: Cobertura de 100% dos casos críticos
+- **Descriptive names**: Classes and methods with clear names
+- **Small functions**: One responsibility per function
+- **Unnecessary comments removed**: Self-explanatory code
+- **Error handling**: Specific exceptions for each case
+- **Comprehensive tests**: 100% coverage of critical cases
 
 #### 🏗️ Clean Architecture
 ```
@@ -449,9 +449,9 @@ npm run test:watch
 └─────────────────────────────────────┘
 ```
 
-#### 💎 Value Objects Implementados
+#### 💎 Implemented Value Objects
 ```typescript
-// Money Value Object - Encapsula lógica monetária
+// Money Value Object - Encapsulates monetary logic
 export class Money {
   private readonly _amountInCents: number;
   
@@ -476,13 +476,13 @@ export class Money {
 
 #### 🎨 Strategy Pattern Example
 ```typescript
-// Interface para estratégias de transação
+// Interface for transaction strategies
 export interface ITransactionStrategy {
   validate(sender: User, receiver: User, amount: Money): Promise<void>;
   execute(sender: User, receiver: User, amount: Money, description: string): Promise<void>;
 }
 
-// Implementação específica para transferências
+// Specific implementation for transfers
 @Injectable()
 export class TransferStrategy implements ITransactionStrategy {
   async validate(sender: User, receiver: User, amount: Money): Promise<void> {
@@ -508,7 +508,7 @@ export class TransferStrategy implements ITransactionStrategy {
 
 #### RabbitMQ Events
 ```typescript
-// Eventos do sistema de transações
+// Transaction system events
 interface TransactionEvents {
   'transaction.created': {
     transactionId: string;
@@ -534,15 +534,15 @@ interface TransactionEvents {
 ```
 
 ### 📊 Metrics & Observability
-- **Structured Logging**: Winston com formato JSON
-- **Transaction Events**: RabbitMQ para auditoria
-- **Error Tracking**: Stack traces estruturados
+- **Structured Logging**: Winston with JSON format
+- **Transaction Events**: RabbitMQ for auditing
+- **Error Tracking**: Structured stack traces
 - **Performance**: Database transaction timing
-- **Security**: Sanitização automática de dados sensíveis
+- **Security**: Automatic sensitive data sanitization
 
-## 📊 Arquitetura de Dados
+## 📊 Data Architecture
 
-### Modelo de Dados
+### Data Model
 
 ```mermaid
 erDiagram
@@ -572,166 +572,166 @@ erDiagram
     User ||--o{ Transaction : "receives"
 ```
 
-### Entidades
+### Entities
 
 #### User
-- `id`: UUID único do usuário
-- `email`: Email único para login
-- `password`: Senha hasheada com bcrypt
-- `name`: Nome completo do usuário
-- `balanceInCents`: Saldo em centavos (inteiro)
+- `id`: Unique user UUID
+- `email`: Unique email for login
+- `password`: bcrypt hashed password
+- `name`: User's full name
+- `balanceInCents`: Balance in cents (integer)
 
 #### Transaction
-- `id`: UUID único da transação
-- `senderId`: UUID do usuário remetente
-- `receiverId`: UUID do usuário destinatário
-- `amountInCents`: Valor em centavos (inteiro)
+- `id`: Unique transaction UUID
+- `senderId`: Sender user UUID
+- `receiverId`: Receiver user UUID
+- `amountInCents`: Amount in cents (integer)
 - `status`: pending | completed | reversed | failed
-- `description`: Descrição opcional
-- `reversalReason`: Motivo da reversão (se aplicável)
+- `description`: Optional description
+- `reversalReason`: Reversal reason (if applicable)
 
-### Regras de Negócio
+### Business Rules
 
-1. **Saldo em Centavos**: Todos os valores são armazenados como inteiros em centavos
-2. **Transações Atômicas**: Transferências usam transações de banco de dados
-3. **Validação de Saldo**: Verificação obrigatória antes de transferências
-4. **Reversões**: Apenas transações "completed" podem ser revertidas
-5. **Segurança**: Usuários só podem reverter suas próprias transações
+1. **Balance in Cents**: All values stored as integers in cents
+2. **Atomic Transactions**: Transfers use database transactions
+3. **Balance Validation**: Mandatory verification before transfers
+4. **Reversals**: Only "completed" transactions can be reversed
+5. **Security**: Users can only reverse their own transactions
 
-## 🔄 Fluxo de Teste Completo
+## 🔄 Complete Test Flow
 
-### 1. Registrar Usuários
+### 1. Register Users
 ```bash
-# Primeiro usuário
+# First user
 curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user1@email.com",
-    "password": "senha123",
-    "name": "Usuário 1",
+    "password": "password123",
+    "name": "User 1",
     "balanceInCents": 100000
   }'
 
-# Segundo usuário  
+# Second user  
 curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user2@email.com",
-    "password": "senha123", 
-    "name": "Usuário 2",
+    "password": "password123", 
+    "name": "User 2",
     "balanceInCents": 50000
   }'
 ```
 
-### 2. Fazer Login e Obter Token
+### 2. Login and Get Token
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user1@email.com",
-    "password": "senha123"
+    "password": "password123"
   }'
 ```
 
-### 3. Criar Transferência
+### 3. Create Transfer
 ```bash
 curl -X POST http://localhost:3000/transactions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <TOKEN_DO_USER1>" \
+  -H "Authorization: Bearer <USER1_TOKEN>" \
   -d '{
-    "receiverId": "<ID_DO_USER2>",
+    "receiverId": "<USER2_ID>",
     "amountInCents": 25000,
-    "description": "Transferência teste"
+    "description": "Test transfer"
   }'
 ```
 
-### 4. Verificar Saldos
+### 4. Check Balances
 ```bash
-# Saldo do remetente
-curl -H "Authorization: Bearer <TOKEN_DO_USER1>" \
+# Sender balance
+curl -H "Authorization: Bearer <USER1_TOKEN>" \
   http://localhost:3000/users/balance
 
-# Saldo do destinatário (precisa do token do user2)
-curl -H "Authorization: Bearer <TOKEN_DO_USER2>" \
+# Receiver balance (requires user2 token)
+curl -H "Authorization: Bearer <USER2_TOKEN>" \
   http://localhost:3000/users/balance
 ```
 
-### 5. Reverter Transação (Opcional)
+### 5. Reverse Transaction (Optional)
 ```bash
 curl -X PATCH http://localhost:3000/transactions/<TRANSACTION_ID>/reverse \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <TOKEN_DO_USER1>" \
+  -H "Authorization: Bearer <USER1_TOKEN>" \
   -d '{
-    "reason": "Reversão de teste"
+    "reason": "Test reversal"
   }'
 ```
 
-## 🛠️ Solução de Problemas
+## 🛠️ Troubleshooting
 
-### Aplicação não inicia
-- Verifique se o Node.js 18+ está instalado
-- Execute `npm install` para instalar dependências
-- Verifique se a porta 3000 está disponível
+### Application doesn't start
+- Check if Node.js 18+ is installed
+- Run `npm install` to install dependencies
+- Check if port 3000 is available
 
-### Erro de conexão com banco
-- Execute `docker-compose up postgres -d`
-- Aguarde alguns segundos para o banco inicializar
-- Verifique logs: `docker-compose logs postgres`
+### Database connection error
+- Run `docker-compose up postgres -d`
+- Wait a few seconds for database initialization
+- Check logs: `docker-compose logs postgres`
 
-### Testes falhando
-- Certifique-se que o banco está rodando
-- Execute `npm run test:unit` para testes que não dependem do banco
-- Para testes E2E, o banco deve estar disponível
+### Tests failing
+- Make sure database is running
+- Run `npm run test:unit` for tests that don't depend on database
+- For E2E tests, database must be available
 
 ---
 
-## 📚 Tecnologias Utilizadas
+## 📚 Technologies Used
 
 ### Core Technologies
-- **Node.js** - Runtime JavaScript
-- **NestJS** - Framework para aplicações escaláveis
-- **TypeScript** - Linguagem de programação tipada
-- **PostgreSQL** - Banco de dados relacional
+- **Node.js** - JavaScript runtime
+- **NestJS** - Framework for scalable applications
+- **TypeScript** - Typed programming language
+- **PostgreSQL** - Relational database
 
 ### Architecture & Patterns
-- **Clean Architecture** - Arquitetura em camadas
-- **SOLID Principles** - Princípios de design
-- **Strategy Pattern** - Para tipos de transação
-- **Factory Pattern** - Criação de objetos
-- **Domain Services** - Lógica de negócio
-- **Value Objects** - Encapsulamento de valores
+- **Clean Architecture** - Layered architecture
+- **SOLID Principles** - Design principles
+- **Strategy Pattern** - For transaction types
+- **Factory Pattern** - Object creation
+- **Domain Services** - Business logic
+- **Value Objects** - Value encapsulation
 
 ### Security & Authentication
-- **JWT** - Autenticação via tokens
-- **bcryptjs** - Hash de senhas
-- **Passport.js** - Estratégias de autenticação
+- **JWT** - Token-based authentication
+- **bcryptjs** - Password hashing
+- **Passport.js** - Authentication strategies
 
 ### Database & ORM
-- **TypeORM** - ORM para TypeScript
-- **PostgreSQL Driver** - Conectividade com banco
+- **TypeORM** - ORM for TypeScript
+- **PostgreSQL Driver** - Database connectivity
 
 ### Messaging & Events
-- **RabbitMQ** - Sistema de eventos assíncronos
-- **amqplib** - Cliente RabbitMQ para Node.js
+- **RabbitMQ** - Asynchronous event system
+- **amqplib** - RabbitMQ client for Node.js
 
 ### Development & Testing
-- **Jest** - Framework de testes
-- **Supertest** - Testes de integração HTTP
-- **Docker** - Containerização
-- **Docker Compose** - Orquestração de containers
+- **Jest** - Testing framework
+- **Supertest** - HTTP integration testing
+- **Docker** - Containerization
+- **Docker Compose** - Container orchestration
 
 ### Monitoring & Documentation
-- **Winston** - Sistema de logs estruturados
-- **Swagger** - Documentação automática da API
-- **class-validator** - Validação de entrada
-- **class-transformer** - Transformação de objetos
+- **Winston** - Structured logging system
+- **Swagger** - Automatic API documentation
+- **class-validator** - Input validation
+- **class-transformer** - Object transformation
 
 ---
 
-- **🏗️ Arquitetura em Camadas**: Separação clara de responsabilidades
-- **🎯 Strategy Pattern**: Extensibilidade para novos tipos de transação
-- **🏭 Factory Pattern**: Criação centralizada de objetos
-- **💰 Value Objects**: Money class para operações monetárias seguras
-- **🐰 RabbitMQ Events**: Sistema de eventos assíncronos para auditoria
-- **🔒 Security Enhanced**: Sanitização automática de dados sensíveis
-- **✅ 27 Unit Tests**: Cobertura completa com nova arquitetura
+- **🏗️ Layered Architecture**: Clear separation of responsibilities
+- **🎯 Strategy Pattern**: Extensibility for new transaction types
+- **🏭 Factory Pattern**: Centralized object creation
+- **💰 Value Objects**: Money class for safe monetary operations
+- **🐰 RabbitMQ Events**: Asynchronous event system for auditing
+- **🔒 Enhanced Security**: Automatic sensitive data sanitization
+- **✅ 27 Unit Tests**: Complete coverage with new architecture
